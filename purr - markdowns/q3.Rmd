@@ -1,0 +1,64 @@
+---
+title: "Question 3"
+---
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+##### (a) Write a function factory `moment` which returns a function to compute the $k$ raw moment of a input ($k$ positive integer).
+
+Hint: a $k$ raw moment of a vector `x` could be computed by `mean(x^k)`
+
+
+```{r}
+# YOUR definition of moment here
+moment <- function(k){
+  function(x) {
+    mean(x ^ k)
+  }
+}
+```
+
+
+```{r}
+x <- rnorm(10)
+
+m1 <- moment(1)
+m1(x)  # it should equal mean(x)
+
+m2 <- moment(2)
+m2(x)  # it should equal mean(x^2)
+```
+
+
+
+##### (b) Consider the `mpg` dataset and compute the first to fifth moments for each numerical column. Create a data frame where the columns are the variables and the rows are the moments. Print the data frame for visualization.
+
+
+Hint: There are several solutions, the easiest one may be `map_dfr` or `map_dfc`. Another alternative is
+`cross`/`map`/`reduce`.
+
+```{r}
+data(mpg)
+nums <- unlist(lapply(mpg, is.numeric)) 
+data <- mpg[ , nums]
+head(data, 5)
+```
+
+```{r}
+d <- map(1:5, moment)
+first <- map(list(data$displ, data$year, data$cyl, data$cty, data$hwy), d[1])
+second <- map(list(data$displ, data$year, data$cyl, data$cty, data$hwy), d[2])
+third <- map(list(data$displ, data$year, data$cyl, data$cty, data$hwy), d[3])
+fourth <- map(list(data$displ, data$year, data$cyl, data$cty, data$hwy), d[4])
+fifth <- map(list(data$displ, data$year, data$cyl, data$cty, data$hwy), d[5])
+
+df <- as.data.frame(do.call(cbind, first))
+colnames(df)<- c("displ", "year", "cyl", "cty", "hwy")
+df <- rbind(df, second)
+df <- rbind(df, third)
+df <- rbind(df, fourth)
+df <- rbind(df, fifth)
+head(df, 5)
+```
