@@ -1,0 +1,74 @@
+---
+title: "Question 2"
+---
+
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+You might have heard of map-reduce. Fundamentally, map-reduce is a `map` combined with a `reduce`.
+For large data, the `map` part in usually done is multiple processes or computer nodes.
+In this exercise, we are going to learn about the map-reduce paradigm by using `purrr`.
+
+
+Suppose we have a large dataset, say the `flights` dataset from `nycflights13` (by today's standard, it is actually not large.)
+
+```{r}
+library(nycflights13)
+head(flights)
+```
+
+Suppose we are interested in the correlation between `distance` and `arr_delay`. The easiest way is of course `cor(flights$distance, flights$arr_delay, use = "complete.obs")`.
+
+However, suppose we have a truly huge data, it might not be possible to process all the data at once. One workaround is to split the data into smaller parts. (I have already split the dataset by the values of month and store the monthly data in the folder `flights`. In practice, data are usually stored in a dataset and we will be using query to fetch specific data.)
+
+
+##### (a) Write a function `compute_r` which takes an input `month`, reads the corresponding file under `flights` folder and computes the correlation between `distance` and `arr_delay`.
+
+```{r}
+compute_r <- function(month) {
+  path <- paste("flights/month0", month, ".csv", sep="") # assuming all monthst start with a 0
+  monthData <- read.csv(path)
+  corr <- cor(monthData$distance, monthData$arr_delay, use = "complete.obs")
+  return(corr)
+}
+```
+
+```{r}
+library(purrr)
+corrs <- map_dbl(1:12, compute_r)
+```
+
+##### (b) The next step is to reduce the vector to a single results by taking the average. Use the `reduce` function to achieve it.
+
+```{r}
+x <- reduce(corrs, mean)
+x
+```
+
+
+##### (c) The same mechanism could be used to compute other statistics. Repeat part (a) and (b) to compute the coefficients when regressing `arr_delay` on `air_time` and `distance`.
+
+```{r}
+library(tidyverse)
+regress_coeff <- function(month) {
+  path <- paste("flights/month0", month, ".csv", sep="") # assuming all months start with a 0
+  monthData <- read.csv(path)
+  model <- lm(arr_delay ~ air_time + distance, data = monthData)
+  x <- coef(model)[1]
+  xair <- coef(model)[2]
+  xdist <- coef(model)[3]
+  return(x) # you can return either x, xdist or xair depending on the coeff you're interested in
+}
+```
+
+```{r}
+# xintercept
+xint <- map_dbl(1:12, regress_coeff)
+x <- reduce(xint, mean)
+x
+```
+
+
+
